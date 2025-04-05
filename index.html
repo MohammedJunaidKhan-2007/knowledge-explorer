@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Explorer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+      color: #e0e0e0;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: rgba(30, 30, 30, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-align: center;
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    .description {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .search-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(15, 15, 15, 0.6);
+      color: #e0e0e0;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+
+    input[type="text"]::placeholder {
+      color: #718096;
+    }
+
+    button {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    #queryResults {
+      display: none;
+      background: rgba(25, 25, 25, 0.9);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    #queryResults.visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #queryResults h2 {
+      font-size: 1.8rem;
+      color: #e0e0e0;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+    }
+
+    #queryResults p {
+      font-size: 1.1rem;
+      color: #a0aec0;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+    }
+
+    #queryResults a {
+      display: inline-block;
+      color: #60a5fa;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    #queryResults a:hover {
+      background: rgba(59, 130, 246, 0.2);
+      transform: translateX(5px);
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 2rem 0;
+    }
+
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: #3b82f6;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      color: #f56565;
+      text-align: center;
+      padding: 1rem;
+      background: rgba(254, 215, 215, 0.1);
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .result-image {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .image-container {
+      position: relative;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      border-radius: 12px;
+      background: rgba(15, 15, 15, 0.6);
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tag {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .tag:hover {
+      background: rgba(59, 130, 246, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .info-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+      color: #718096;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+
+      .container {
+        padding: 1.5rem;
+      }
+
+      .search-container {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Knowledge Explorer</h1>
+    <p class="description">Discover the world's knowledge through Wikipedia. Enter any topic to start exploring.</p>
+    
+    <div class="search-container">
+      <input 
+        type="text" 
+        id="queryInput" 
+        placeholder="What would you like to learn about?"
+        autocomplete="off"
+      />
+      <button id="searchButton">Explore</button>
+    </div>
+
+    <div class="loading" id="loading"></div>
+    <div id="queryResults"></div>
+  </div>
+
+  <script>
+    const queryInput = document.getElementById('queryInput');
+    const searchButton = document.getElementById('searchButton');
+    const queryResults = document.getElementById('queryResults');
+    const loading = document.getElementById('loading');
+
+    // Handle Enter key press
+    queryInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        performSearch();
+      }
+    });
+
+    searchButton.addEventListener('click', performSearch);
+
+    async function performSearch() {
+      const query = queryInput.value.trim();
+      
+      if (!query) {
+        showError('Please enter a topic to search.');
+        return;
+      }
+
+      // Show loading state
+      loading.style.display = 'block';
+      queryResults.style.display = 'none';
+      queryResults.classList.remove('visible');
+      queryResults.innerHTML = '';
+
+      try {
+        // Use the MediaWiki API directly for the search
+        const searchApi = `https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&generator=search&gsrnamespace=0&gsrlimit=1&gsrsearch=${encodeURIComponent(query)}&prop=pageimages|extracts&pilimit=max&exintro&explaintext&exsentences=3&exlimit=max`;
+        
+        const response = await fetch(searchApi);
+        const data = await response.json();
+        
+        if (!data.query || !data.query.pages) {
+          throw new Error('No results found');
+        }
+        
+        // Get the first page from the results
+        const pageId = Object.keys(data.query.pages)[0];
+        const page = data.query.pages[pageId];
+        
+        // Get the complete article details
+        const pageTitle = encodeURIComponent(page.title);
+        const articleApi = `https://en.wikipedia.org/api/rest_v1/page/summary/${pageTitle}`;
+        
+        const articleResponse = await fetch(articleApi);
+        const articleData = await articleResponse.json();
+        
+        if (!articleResponse.ok) {
+          throw new Error('Failed to fetch article details');
+        }
+        
+        // Build the image HTML
+        let imageHTML = '';
+        if (articleData.thumbnail) {
+          const imageUrl = articleData.thumbnail.source.replace(/\/\d+px-/, '/600px-');
+          imageHTML = `
+            <div class="image-container">
+              <img class="result-image" src="${imageUrl}" alt="${articleData.title}" />
+            </div>
+          `;
+        }
+        
+        // Get related topics for tags
+        const relatedTopicsUrl = `https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&list=search&srsearch=${encodeURIComponent(articleData.title)}&srlimit=5`;
+        const relatedResponse = await fetch(relatedTopicsUrl);
+        const relatedData = await relatedResponse.json();
+        
+        // Create tags from related topics
+        let tagsHTML = '';
+        if (relatedData.query && relatedData.query.search) {
+          tagsHTML = '<div class="tags">';
+          relatedData.query.search.slice(1, 5).forEach(item => {
+            const tagTitle = item.title.split(' ').slice(0, 3).join(' ');
+            tagsHTML += `<span class="tag" onclick="searchFor('${item.title}')">${tagTitle}</span>`;
+          });
+          tagsHTML += '</div>';
+        }
+        
+        // Current date for the info container
+        const currentDate = new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+        
+        // Build the results HTML
+        queryResults.innerHTML = `
+          ${imageHTML}
+          <div class="info-container">
+            <span>${currentDate}</span>
+            <span>Wikipedia</span>
+          </div>
+          <h2>${articleData.title}</h2>
+          ${tagsHTML}
+          <p>${articleData.extract}</p>
+          <a href="${articleData.content_urls.desktop.page}" target="_blank">
+            Read more on Wikipedia →
+          </a>
+        `;
+
+        // Show results
+        queryResults.style.display = 'block';
+        // Use requestAnimationFrame to ensure the display change has taken effect
+        requestAnimationFrame(() => {
+          queryResults.classList.add('visible');
+        });
+
+      } catch (error) {
+        showError('No results found. Please try another search term.');
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    function searchFor(term) {
+      queryInput.value = term;
+      performSearch();
+    }
+
+    function showError(message) {
+      queryResults.innerHTML = `<div class="error-message">${message}</div>`;
+      queryResults.style.display = 'block';
+      requestAnimationFrame(() => {
+        queryResults.classList.add('visible');
+      });
+    }
+
+    // Add input focus animation
+    queryInput.addEventListener('focus', function() {
+      this.parentElement.style.transform = 'scale(1.01)';
+    });
+
+    queryInput.addEventListener('blur', function() {
+      this.parentElement.style.transform = 'scale(1)';
+    });
+    
+    // Add a subtle animation to the input placeholder
+    let placeholders = [
+      "What would you like to learn about?",
+      "Search for any topic...",
+      "Try 'Earth' or 'Solar System'",
+      "Explore the world's knowledge...",
+      "Search for people, places, or concepts"
+    ];
+    
+    let currentPlaceholder = 0;
+    
+    setInterval(() => {
+      queryInput.setAttribute('placeholder', placeholders[currentPlaceholder]);
+      currentPlaceholder = (currentPlaceholder + 1) % placeholders.length;
+    }, 3000);
+  </script>
+</body>
+</html>
